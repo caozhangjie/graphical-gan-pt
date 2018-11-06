@@ -96,7 +96,7 @@ discriminator = discriminator.cuda()
 generator = Generator()
 generator = generator.cuda()
 
-criterion = nn.BCELoss()
+criterion = nn.BCEWithLogitsLoss()
 
 
 optimizer_e = optim.Adam(extractor.parameters(), lr=lr, betas=(beta1, 0.999))
@@ -138,11 +138,9 @@ for iter_ in range(num_iter):
         if true_iter % len_loader == 0:
             iter_loader = iter(train_loader)
         data = iter_loader.next()
-        input_, label = data
-        input_ = input_.cuda()
-        #label = label.cuda()
-        real_x = input_
-        q_z, q_z_mean, q_z_std = extractor(input_)
+        real_x, label = data
+        real_x = real_x.cuda()
+        q_z, q_z_mean, q_z_std = extractor(real_x)
         rec_x, rex_x_mean, rec_x_std = generator(q_z)
         p_z = torch.randn([input_.size(0), dim_latent]).cuda()
         fake_x, _, _ = generator(p_z)
@@ -165,16 +163,15 @@ for iter_ in range(num_iter):
             label_dis = torch.cat((torch.zeros([input_.size(0)]), torch.ones([input_.size(0)])), dim=0).cuda()
             label_gen = torch.cat((torch.ones([input_.size(0)]), torch.zeros([input_.size(0)])), dim=0).cuda()
             disc_input = torch.cat((disc_real, disc_fake), dim=0)
-            disc_input = nn.Sigmoid()(disc_input).view(-1)
             if sub_iter == 0:
-                disc_loss = criterion(disc_input, label_gen.view(-1))
+                disc_loss = criterion(disc_input, label_gen)
                 optimizer_g.zero_grad()
                 optimizer_e.zero_grad()
                 disc_loss.backward()
                 optimizer_g.step()
                 optimizer_e.step()
             else:
-                disc_loss = criterion(disc_input, label_dis.view(-1))
+                disc_loss = criterion(disc_input, label_dis)
                 optimizer_d.zero_grad()
                 disc_loss.backward()
                 optimizer_d.step()

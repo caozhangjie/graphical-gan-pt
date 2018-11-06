@@ -1,15 +1,33 @@
 import torch
 import torch.nn as nn
+import numpy as np
 import pdb
+
+def sample(shape):
+    if len(shape) < 2:
+        raise RuntimeError("Only shapes of length 2 or more are "
+                           "supported.")
+    flat_shape = (shape[0], np.prod(shape[1:]))
+     # TODO: why normal and not uniform?
+    a = np.random.normal(0.0, 1.0, flat_shape)
+    u, _, v = np.linalg.svd(a, full_matrices=False)
+    # pick the one with the correct shape
+    q = u if u.shape == flat_shape else v
+    q = q.reshape(shape)
+    return q.astype('float32')
 
 def init_weights(m):
     classname = m.__class__.__name__
-    if classname.find('Conv2d') != -1 or classname.find('Linear') != -1 or classname.find('ConvTranspose2d') != -1:
+    if classname.find('Conv2d') != -1 or classname.find('ConvTranspose2d') != -1:
         nn.init.kaiming_uniform_(m.weight)
         nn.init.zeros_(m.bias)
     elif classname.find('BatchNorm') != -1:
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
+    elif classname.find('Linear') != -1:
+        weight = sample((m.in_features, m.out_features)).from_numpy()
+        m.weight.data.copy_(weight)
+        nn.init.zeros_(m.bias)
 
 class Discriminator1(nn.Module):
     def __init__(self, dim_latent=128, bn_flag=True):
@@ -127,6 +145,7 @@ class Extractor(nn.Module):
             self.bn2 = nn.BatchNorm2d(4*dim)
         self.relu3 = nn.LeakyReLU(0.2)
         self.linear = nn.Linear(4*4*4*dim, dim_latent)
+        self.linear_std = nn.Linear(4*4*4*dim, dim_latent)
 
     def forward(self, x):
         x = self.pad1(x)
@@ -145,7 +164,7 @@ class Extractor(nn.Module):
         x = x.view(-1, 4*4*4*self.dim)
         
         if self.type_q == 'learn_std':
-            std = self.linear(x)
+            std = self.linear_std(x)
             std = torch.exp(std)
         elif self.type_q == 'fix_std':
             std = (torch.ones([x.size(0), self.dim_latent]) * self.std).cuda()
