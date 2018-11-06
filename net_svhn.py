@@ -25,7 +25,7 @@ def init_weights(m):
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
     elif classname.find('Linear') != -1:
-        weight = sample((m.in_features, m.out_features)).from_numpy()
+        weight = torch.from_numpy(sample((m.in_features, m.out_features)))
         m.weight.data.copy_(weight)
         nn.init.zeros_(m.bias)
 
