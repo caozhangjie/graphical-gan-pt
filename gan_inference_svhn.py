@@ -165,7 +165,7 @@ for iter_ in range(num_iter):
         if method == 'ali':
             label_dis = torch.cat((torch.zeros([real_x.size(0)]), torch.ones([real_x.size(0)])), dim=0).cuda()
             label_gen = torch.cat((torch.ones([real_x.size(0)]), torch.zeros([real_x.size(0)])), dim=0).cuda()
-            disc_input = torch.cat((disc_real, disc_fake), dim=0)
+            disc_input = torch.cat((disc_real, disc_fake), dim=0).view(-1)
             if sub_iter == 0:
                 disc_loss = criterion(disc_input, label_gen)
                 optimizer_g.zero_grad()
