@@ -1,7 +1,7 @@
 from torchvision.datasets import SVHN
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from net_svhn import Extractor, Discriminator, Generator, Discriminator1
+from net_svhn import Extractor, Discriminator, Generator, Discriminator1, init_weights
 import torch
 import torch.nn as nn
 import numpy as np
@@ -84,16 +84,19 @@ else:
     critic_iters = 1
 
 extractor = Extractor(type_q=type_q)
+extractor.apply(init_weights)
 extarctor = extractor.cuda()
-extractor.apply()
 if method in ['vegan', 'vegan-wgan-gp']:
     discriminator = Discriminator1()
 elif method in ['vegan-mmd', 'vegan-kl', 'vegan-ikl', 'vegan-jsd', 'vae']:
     pass
 else:
     discriminator = Discriminator()
+discriminator.apply(init_weights)
 discriminator = discriminator.cuda()
+
 generator = Generator()
+generator.apply(init_weights)
 generator = generator.cuda()
 
 criterion = nn.BCEWithLogitsLoss()
