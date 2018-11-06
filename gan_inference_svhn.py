@@ -145,7 +145,7 @@ for iter_ in range(num_iter):
         real_x = real_x.cuda()
         q_z, q_z_mean, q_z_std = extractor(real_x)
         rec_x, rex_x_mean, rec_x_std = generator(q_z)
-        p_z = torch.randn([input_.size(0), dim_latent]).cuda()
+        p_z = torch.randn([real_x.size(0), dim_latent]).cuda()
         fake_x, _, _ = generator(p_z)
         rec_z, _, _ = extractor(fake_x)
         if method in ['vegan-kl', 'vegan-ikl', 'vegan-jsd']:
@@ -163,8 +163,8 @@ for iter_ in range(num_iter):
             disc_real = discriminator(real_x, q_z)
             disc_fake = discriminator(fake_x, p_z)
         if method == 'ali':
-            label_dis = torch.cat((torch.zeros([input_.size(0)]), torch.ones([input_.size(0)])), dim=0).cuda()
-            label_gen = torch.cat((torch.ones([input_.size(0)]), torch.zeros([input_.size(0)])), dim=0).cuda()
+            label_dis = torch.cat((torch.zeros([real_x.size(0)]), torch.ones([real_x.size(0)])), dim=0).cuda()
+            label_gen = torch.cat((torch.ones([real_x.size(0)]), torch.zeros([real_x.size(0)])), dim=0).cuda()
             disc_input = torch.cat((disc_real, disc_fake), dim=0)
             if sub_iter == 0:
                 disc_loss = criterion(disc_input, label_gen)
